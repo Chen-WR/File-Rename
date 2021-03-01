@@ -113,6 +113,8 @@ class App(QWidget):
 		self.enableButton()	
 
 def main():
+	QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+	QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 	app = QApplication(sys.argv)
 	software = App()
 	software.initUI()
