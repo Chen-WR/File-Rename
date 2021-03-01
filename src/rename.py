@@ -1,7 +1,7 @@
 import os
 import sys
 from PyQt5.QtWidgets import QWidget, QFileDialog, QApplication, QDesktopWidget, QPushButton, QLabel, QMessageBox
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QCoreApplication
 
 class App(QWidget):
 	def __init__(self):
@@ -9,7 +9,7 @@ class App(QWidget):
 		self.title = 'File Rename'
 		self.left = 0
 		self.top = 0 
-		self.width = 300
+		self.width = 500
 		self.height = 150
 		self.dir = ''
 		self.files = []
@@ -44,6 +44,10 @@ class App(QWidget):
 		self.label1.setGeometry(140, 20, 300, 20)
 		self.label1.setWordWrap(True)
 
+		self.label2 = QLabel("", self)
+		self.label2.setGeometry(140, 70, 300, 20)
+		self.label2.setWordWrap(True)
+
 	def getDir(self):
 		self.dialog1 = QFileDialog()
 		self.dialog1.setFileMode(QFileDialog.Directory)
@@ -52,14 +56,14 @@ class App(QWidget):
 		self.label1.setText(self.dir)
 
 	def writeLog(self):
-		log = open('history.txt', 'a+')
+		log = open('history.txt', 'a+', encoding="utf-8")
 		for file in self.filescopy:
 			log.write(file + '\n')
 		log.close()
 
 	def getLog(self):
 		if os.path.exists('history.txt'):
-			log = open('history.txt', 'r')
+			log = open('history.txt', 'r', encoding="utf-8")
 			files = log.readlines()
 			array = [file.strip() for file in files]
 			log.close()
@@ -75,12 +79,13 @@ class App(QWidget):
 		self.button1.setEnabled(True)
 		self.button2.setEnabled(True)
 		self.label1.setText('Choose Directory')
+		self.label2.setText("")
 		self.dir = ''
 		self.files = []
 		self.filescopy = []
 		self.log = []
 		self.count = 0
-
+		
 	def popWarning1(self):
 		self.popup1 = QMessageBox()
 		self.popup1.setWindowTitle("Warning")
@@ -98,16 +103,26 @@ class App(QWidget):
 			self.popWarning1()
 		else:
 			self.disableButton()
+			now = 1
 			self.files = [files for root, directory, files in os.walk(self.dir)][0]
 			self.filescopy = self.files.copy()
 			self.log = self.getLog()
 			for files in self.files:
+				self.label2.setText(f'Processing: {now}/{len(self.files)} pictures')
+				QCoreApplication.processEvents()	
+				origin = os.path.join(self.dir, files)
 				if files not in self.log:
-					exe = os.path.splitext(files)[1]
-					os.rename(os.path.join(self.dir, files), os.path.join(self.dir, str(self.count) + exe))
-					self.count+=1
+					while True:
+						destin = os.path.join(self.dir, str(self.count) + os.path.splitext(files)[1])
+						if os.path.exists(destin):
+							self.count+=1
+						else:
+							os.rename(origin, destin)
+							self.count+=1
+							break
 				elif files in self.log:
 					self.filescopy.remove(files)
+				now+=1
 		self.writeLog()
 		self.popWarning2()
 		self.enableButton()	
